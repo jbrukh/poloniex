@@ -3,7 +3,6 @@ package poloniex
 import (
 	"encoding/json"
 	"fmt"
-	"strconv"
 	"strings"
 	"time"
 
@@ -141,8 +140,8 @@ func (p *Poloniex) Get24hVolumes() (volumes Volume, err error) {
 }
 
 type Book struct {
-	Price    float64 `json:"price"`
-	Quantity float64 `json:"quantity"`
+	Price    decimal.Decimal `json:"price"`
+	Quantity decimal.Decimal `json:"quantity"`
 }
 
 func (bk *Book) UnmarshalJSON(b []byte) error {
@@ -153,13 +152,13 @@ func (bk *Book) UnmarshalJSON(b []byte) error {
 		return err
 	}
 
-	price, err := strconv.ParseFloat(msg[0].(string), 64)
+	price, err := decimal.NewFromString(msg[0].(string))
 	if err != nil {
 		return err
 	}
 
 	bk.Price = price
-	bk.Quantity = msg[1].(float64)
+	bk.Quantity = decimal.NewFromFloat(msg[1].(float64))
 	return nil
 }
 

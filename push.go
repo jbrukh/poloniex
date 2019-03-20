@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/gorilla/websocket"
+	"github.com/shopspring/decimal"
 )
 
 const (
@@ -66,9 +67,9 @@ type OrderDepth struct {
 
 // "o" messages
 type WSOrderBook struct {
-	Rate      float64 `json:"rate,string"`
-	TypeOrder string  `json:"type"`
-	Amount    float64 `json:"amount,string"`
+	Rate      decimal.Decimal `json:"rate,string"`
+	TypeOrder string          `json:"type"`
+	Amount    decimal.Decimal `json:"amount,string"`
 }
 
 // "o" messages.
@@ -76,17 +77,17 @@ type WSOrderBookModify WSOrderBook
 
 // "o" messages.
 type WSOrderBookRemove struct {
-	Rate      float64 `json:"rate,string"`
-	TypeOrder string  `json:"type"`
+	Rate      decimal.Decimal `json:"rate,string"`
+	TypeOrder string          `json:"type"`
 }
 
 // "t" messages.
 type NewTrade struct {
-	TradeId   int64   `json:"tradeID,string"`
-	Rate      float64 `json:"rate,string"`
-	Amount    float64 `json:"amount,string"`
-	Total     float64 `json:"total,string"`
-	TypeOrder string  `json:"type"`
+	TradeId   int64           `json:"tradeID,string"`
+	Rate      decimal.Decimal `json:"rate,string"`
+	Amount    decimal.Decimal `json:"amount,string"`
+	Total     decimal.Decimal `json:"total,string"`
+	TypeOrder string          `json:"type"`
 }
 
 type WSClient struct {
@@ -294,15 +295,37 @@ func convertArgsToMarketUpdate(args []interface{}) (res []MarketUpdate, err erro
 			bids := val["orderBook"].([]interface{})[1].(map[string]interface{})
 
 			for k, v := range bids {
-				price, _ := strconv.ParseFloat(k, 64)
-				quantity, _ := strconv.ParseFloat(v.(string), 64)
+
+				// price
+				price, err := decimal.NewFromString(k)
+				if err != nil {
+					return nil, err
+				}
+
+				// quantity
+				quantity, err := decimal.NewFromString(v.(string))
+				if err != nil {
+					return nil, err
+				}
+
 				book := Book{Price: price, Quantity: quantity}
 				orderdepth.OrderBook.Bids = append(orderdepth.OrderBook.Bids, book)
 			}
 
 			for k, v := range asks {
-				price, _ := strconv.ParseFloat(k, 64)
-				quantity, _ := strconv.ParseFloat(v.(string), 64)
+
+				// price
+				price, err := decimal.NewFromString(k)
+				if err != nil {
+					return nil, err
+				}
+
+				// quantity
+				quantity, err := decimal.NewFromString(v.(string))
+				if err != nil {
+					return nil, err
+				}
+
 				book := Book{Price: price, Quantity: quantity}
 				orderdepth.OrderBook.Asks = append(orderdepth.OrderBook.Asks, book)
 			}
@@ -325,13 +348,13 @@ func convertArgsToMarketUpdate(args []interface{}) (res []MarketUpdate, err erro
 				orderdatafield.TypeOrder = "ask"
 			}
 
-			orderdatafield.Rate, err = strconv.ParseFloat(vals[2].(string), 64)
+			orderdatafield.Rate, err = decimal.NewFromString(vals[2].(string))
 			if err != nil {
 				err = Error(WSOrderBookError, "Rate")
 				return
 			}
 
-			orderdatafield.Amount, err = strconv.ParseFloat(vals[3].(string), 64)
+			orderdatafield.Amount, err = decimal.NewFromString(vals[3].(string))
 			if err != nil {
 				err = Error(WSOrderBookError, "Amount")
 				return
@@ -354,19 +377,19 @@ func convertArgsToMarketUpdate(args []interface{}) (res []MarketUpdate, err erro
 				tradedatafield.TypeOrder = "sell"
 			}
 
-			tradedatafield.Rate, err = strconv.ParseFloat(vals[3].(string), 64)
+			tradedatafield.Rate, err = decimal.NewFromString(vals[3].(string))
 			if err != nil {
 				err = Error(NewTradeError, "Rate")
 				return
 			}
 
-			tradedatafield.Amount, err = strconv.ParseFloat(vals[4].(string), 64)
+			tradedatafield.Amount, err = decimal.NewFromString(vals[4].(string))
 			if err != nil {
 				err = Error(NewTradeError, "Amount")
 				return
 			}
 
-			tradedatafield.Total = vals[5].(float64)
+			tradedatafield.Total = decimal.NewFromFloat(vals[5].(float64))
 
 			marketupdate.TypeUpdate = "NewTrade"
 			marketupdate.Data = tradedatafield
