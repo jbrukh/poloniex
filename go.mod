@@ -1,4 +1,4 @@
-module github.com/iowar/poloniex
+module github.com/jbrukh/poloniex
 
 go 1.12
 
